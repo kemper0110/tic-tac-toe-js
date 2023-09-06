@@ -1,88 +1,58 @@
 import '../style.css'
-import { setupCounter } from './counter.js'
+import {autoRun} from "./reactive.js";
+import {board_state, CellState, game_state, onCellClick, restart} from "./tic-tac-toe.js";
 
 /*
     4*. Крестики-нолики (игра с компьютером) на поле 15x15.
     Первый, выстроивший в ряд 5 своих фигур по вертикали, горизонтали или диагонали, выигрывает.
 */
 
-function hasChanged(newVal, oldVal) {
-    return newVal !== oldVal && (newVal === newVal || oldVal === oldVal);
-}
-let runningReaction = null;
-function reactive(obj) {
-    return Object.entries(obj).reduce((acc, [key, val]) => {
-        let value = val;
-        const deps = new Set();
-        Object.defineProperty(acc, key, {
-            get() {
-                if (runningReaction && !deps.has(runningReaction)) {
-                    deps.add(runningReaction);
-                }
-                return value;
-            },
-            set(newValue) {
-                if (hasChanged(value, newValue)) {
-                    value = newValue;
-                    deps.forEach(f => f());
-                }
-            },
-            enumerable: true,
-        });
-        return acc;
-    }, {});
-}
-function autoRun(fn) {
-    runningReaction = fn;
-    fn();
-    runningReaction = null;
-}
 
-function Cell(cell_data) {
-    const id = cell_data.id
-    // autoRun(() => {
-    //     const e = container.querySelector(`#c${id}`)
-    //     e.innerHTML = cell_data.value
-    // })
-    return `
-        <div id="c${id}" class="w-14 h-14 bg-white border-black border">
-        </div>
-    `
-}
-
-const CellState = {
-    Empty: "empty",
-    Cross: "cross",
-    Zero: "zero"
-}
-
-const data = Array.from({length: 15 * 15}, (v, i) => reactive({
-    value: CellState.Empty
-})).map((v, i) => {
-    v.id = i
-    return v
-})
+const ids = Array.from({length: 15 * 15}, (v, i) => i)
 
 document.querySelector('#app').innerHTML = `
   <div>
-<!--    <button id="counter" type="button"></button>-->
-    <div id="container" class="grid grid-cols-[repeat(15,minmax(0,1fr))] grid-rows-[repeat(15,minmax(0,1fr))]">
+    <h1>
+        Player: <span id="player"></span>
+    </h1>
+    <h2>
+        Count: <span id="count"></span>    
+    </h2>
+    <button id="restart" class="">
+        Restart    
+    </button>
+    <div id="container" class="bg-slate-400 grid grid-cols-[repeat(15,minmax(0,1fr))] grid-rows-[repeat(15,minmax(0,1fr))]">
+        ${
+            ids.map(id => `
+                <button id="cell-${id}" class="w-14 h-14 border-black border border-solid text-black text-5xl" />
+            `).join('\n')
+        }
     </div>
   </div>
 `
 
+// ### CONNECT STATE TO HTML ELEMENTS ###
+
+const player_element = document.querySelector('#player')
+autoRun(() => {
+    player_element.innerHTML = game_state.player
+})
+
+
+const count_element = document.querySelector('#count')
+autoRun(() => {
+    count_element.innerHTML = game_state.count
+})
+
+
 const container = document.querySelector('#container')
+board_state.forEach((cell_state, id) => {
+    const cell_element = container.querySelector(`#cell-${id}`)
+    cell_element.onclick = onCellClick(id, cell_state)
+    autoRun(() => {
+        cell_element.innerHTML = cell_state.value
+    })
+})
 
-container.innerHTML = `
-    ${
-        data.map(cell_data => Cell(cell_data)).join('\n')
-    }
-`
-
-// ${
-//     data.map(v => {
-//         return Cell(v)
-//     }).join('\n')
-// }
-
-// setupCounter(document.querySelector('#counter'))
+const restart_button = document.querySelector('#restart')
+restart_button.onclick = restart
