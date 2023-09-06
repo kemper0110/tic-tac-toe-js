@@ -1,6 +1,6 @@
 import '../style.css'
 import {autoRun} from "./reactive.js";
-import {board_state, CellState, game_state, onCellClick, restart} from "./tic-tac-toe.js";
+import {board_state, game_state, onCellClick, restart} from "./tic-tac-toe.js";
 
 /*
     4*. Крестики-нолики (игра с компьютером) на поле 15x15.
